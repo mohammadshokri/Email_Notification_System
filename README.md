@@ -26,7 +26,8 @@ Before you can run this project, make sure you have the following dependencies i
 1. Clone this repository to your local machine.
 
 ```shell
-git clone https://github.com/yourusername/your-project.git
+git clone https://github.com/mohammadshokri/Email_Notification_System.git
+
 
 
 Install the required Python libraries using pip.
