@@ -1,24 +1,24 @@
-import smtplib
 import  cx_Oracle
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from abc import ABC, abstractmethod
 from  Smtp_conf import SMTPClient, EmailSender
-from recipient import Person,Role
 import Connectors
 import threading
 import time
-import random
-from recipient import Person,Role,load_data_from_csv
+from recipient import load_data_from_csv
 from Message import CreateMessage
+import docker
+from kafka import KafkaConsumer
+from kafka.errors import NoBrokersAvailable
 
 roles, people = load_data_from_csv()
+
 
 smtp_client = SMTPClient()
 email_sender = EmailSender(smtp_client)
 # email_sender.send_notification([moh.email], 'sample context', "Python SMTP")
 # email_sender.send_notification([person.email for person in role.members], 'sample context', "Python SMTP")
-
+container_names = ["etl-req-resp-docker", "etl-exception-docker", "etl-event-docker", "kafka-event-docker", "kafka-logstash-docker"]
+topic_names=['LogstashTopic','EventTopic']
+bootstrap_servers = ['192.168.102.72:9092']
 connection = Connectors.oracle_dw_connect()
 
 
@@ -28,7 +28,7 @@ def chk_424():
     result_dict = {}
     try:
         cursor = connection.cursor()
-        cursor.execute("SELECT session_clientid , count(*) FROM event_prim "\
+        cursor.execute("SELECT session_clientid , count(*) FROM galaxy_ai.event_prim "\
                        "where  t_date >  to_char(sysdate-10, 'yyyy/mm/dd hh24:mi:ss','nls_calendar=persian')"\
                         # "and status='exception' and eventtype='span' and statuscode='424'"\
                         "GROUP BY session_clientid" )
@@ -50,7 +50,7 @@ def chk_timeout():
     print("Function Event timeout is running.")
     try:
         cursor = connection.cursor()
-        cursor.execute("SELECT COUNT(*) FROM all_status")
+        cursor.execute("SELECT COUNT(*) FROM galaxy_ai.all_status")
         count = cursor.fetchone()[0]
         print(f"Count of rows in job_log : {count}")
 
@@ -63,6 +63,36 @@ def chk_timeout():
 def chk_services ():
     print("Function services status is running.")
 
+def check_docker_status():
+    client = docker.from_env()
+    containers = client.containers.list()
+    if containers:
+        running_container_names = [container.name for container in containers]
+    for container_name in container_names:
+        try:
+            for name in container_names:
+                if name not in running_container_names:
+                    event_message = CreateMessage.ReportTemplate('Critical', 'Down', f"Container '{container_name}' is not running.")
+                    email_sender.send_notification([person.email for person in roles['Manager'].members], event_message,
+                                           "OBS Event: Infra Broken")
+        except Exception as e:
+            event_message = CreateMessage.ReportTemplate('Critical', 'Unknown',
+                                                         f"Containers are Unknown.")
+            email_sender.send_notification([person.email for person in roles['Manager'].members], event_message,
+                                           "OBS Event: Infra Exceptions Occured")
+
+def check_kafka_status():
+    for topic_name in topic_names:
+        try:
+            consumer = KafkaConsumer(topic_name,bootstrap_servers=bootstrap_servers)
+        except NoBrokersAvailable:
+            print(f"Kafka Topic {topic_name} is down")
+            event_message = CreateMessage.ReportTemplate('Critical-Kafka', 'Down',
+                                                         f"Kafka '{topic_name}' is Down.")
+            email_sender.send_notification([person.email for person in roles['Manager'].members], event_message,
+                                           "OBS Event: Infra Broken")
+        except Exception as e:
+            print(f"Kafka error: {e}")
 def chk_db():
     print("Function Db Check is running.")
 
@@ -74,10 +104,11 @@ def sensor(name, interval, function):
 
 # Create a list of sensors with their names, intervals, and functions
 sensors = [
-    {"name": "Sensor1", "interval": 2, "function": chk_timeout},
-    {"name": "Sensor2", "interval": 3, "function": chk_services},
-    {"name": "Sensor3", "interval": 10, "function": chk_db},
-    {"name": "Sensor3", "interval": 5, "function": chk_424},
+    {"name": "Sensor1", "interval": 5, "function": check_docker_status},
+    {"name": "Sensor1", "interval": 3, "function": check_kafka_status},
+    # {"name": "Sensor2", "interval": 3, "function": chk_services},
+    # {"name": "Sensor3", "interval": 10, "function": chk_db},
+    # {"name": "Sensor3", "interval": 5, "function": chk_424},
 ]
 
 

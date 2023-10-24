@@ -19,12 +19,12 @@ class CreateMessage:
         return message
 
     @staticmethod
-    def ReportTemplate(param1, param2, param3, param4):
+    def ReportTemplate(param1, param2, param3, param10=jdatetime.datetime.now().__str__()):
         message  =  (
             f"CATEGORY = {param1}\n"
             f"STATUS_DESCRIPTION = {param2}\n"
             f"DETAIL = {param3}\n"
-            f"REPORTED TIME = {param4}"
+            f"REPORTED TIME = {param10}"
         )
         return message
 

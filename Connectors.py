@@ -12,21 +12,21 @@ class DatabaseConnector(ABC):
         pass
 
 def oracle_connect():
-    os.environ["PATH"] = r"D:\instantclient_21_7;" + os.environ["PATH"]
-    os.environ["ORACLE_HOME"] = r"D:\instantclient_21_7"
+    os.environ["PATH"] = r"D:\instantclient_21_9;" + os.environ["PATH"]
+    os.environ["ORACLE_HOME"] = r"D:\instantclient_21_9"
 
-    dsn_tns = cx_Oracle.makedsn('localhost', '1521',
-                                service_name='xepdb1')
-    conn = cx_Oracle.connect(user=r'uname', password='pass', dsn=dsn_tns)
+    dsn_tns = cx_Oracle.makedsn('192.168.102.71', '1521',
+                                service_name='DATAGOVDEV')
+    conn = cx_Oracle.connect(user=r'obs_noti', password='obsNoti123', dsn=dsn_tns)
     return conn
 
 def oracle_dw_connect():
-    os.environ["PATH"] = r"D:\instantclient_21_7;" + os.environ["PATH"]
-    os.environ["ORACLE_HOME"] = r"D:\instantclient_21_7"
+    os.environ["PATH"] = r"D:\instantclient_21_9;" + os.environ["PATH"]
+    os.environ["ORACLE_HOME"] = r"D:\instantclient_21_9"
 
-    dsn_tns = cx_Oracle.makedsn('192.168.1.1', '1521',
-                                service_name='xepdb2')
-    conn = cx_Oracle.connect(user=r'uname', password='****', dsn=dsn_tns)
+    dsn_tns = cx_Oracle.makedsn('192.168.102.71', '1521',
+                                service_name='DATAGOVDEV')
+    conn = cx_Oracle.connect(user=r'obs_noti', password='obsNoti123', dsn=dsn_tns)
     return conn
 
 class MongoConnector(DatabaseConnector):
