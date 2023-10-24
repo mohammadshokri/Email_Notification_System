@@ -19,7 +19,7 @@ class EmailSender(SenderType):
             self.smtp_client.send_email(reci, message, subject)
 
 class SMTPClient:
-    def __init__(self, smtp_server="webmail.domain.com", smtp_port=25, smtp_user="obs.noti@domain.com", smtp_password="password"):
+    def __init__(self, smtp_server="webmail.tiddev.com", smtp_port=25, smtp_user="obs.noti@domain.com", smtp_password="*****"):
         self.smtp_server = smtp_server
         self.smtp_port = smtp_port
         self.smtp_user = smtp_user
