@@ -5,7 +5,12 @@ topic_names=['LogstashTopic','EventTopic']
 def check_kafka_status(bootstrap_servers):
     for topic_name in topic_names:
         try:
-            consumer = KafkaConsumer(topic_name,bootstrap_servers=bootstrap_servers)
+            consumer = KafkaConsumer(
+                topic_name,
+                bootstrap_servers=bootstrap_servers,
+                enable_auto_commit=True,
+            )
+            print(f"Kafka Topic {topic_name} is up")
         except NoBrokersAvailable:
             print(f"Kafka Topic {topic_name} is down")
         except Exception as e:

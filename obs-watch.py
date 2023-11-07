@@ -8,7 +8,6 @@ from Message import CreateMessage
 import docker
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
-
 roles, people = load_data_from_csv()
 
 
@@ -62,9 +61,12 @@ def chk_timeout():
 
 def chk_services ():
     print("Function services status is running.")
-
+def put_queue(event, what):
+    print(event, what)
+'''
 def check_docker_status():
-    client = docker.from_env()
+    # client = docker.from_env()
+    client = docker.DockerClient(base_url=f'tcp://10.40.195.158:2375')
     containers = client.containers.list()
     if containers:
         running_container_names = [container.name for container in containers]
@@ -73,18 +75,23 @@ def check_docker_status():
             for name in container_names:
                 if name not in running_container_names:
                     event_message = CreateMessage.ReportTemplate('Critical', 'Down', f"Container '{container_name}' is not running.")
-                    email_sender.send_notification([person.email for person in roles['Manager'].members], event_message,
-                                           "OBS Event: Infra Broken")
+                    put_queue('Critical', f"Container '{container_name}' is not running.")
+                    # email_sender.send_notification([person.email for person in roles['Manager'].members], event_message,
+                    #                        "OBS Event: Infra Broken")
         except Exception as e:
             event_message = CreateMessage.ReportTemplate('Critical', 'Unknown',
                                                          f"Containers are Unknown.")
             email_sender.send_notification([person.email for person in roles['Manager'].members], event_message,
                                            "OBS Event: Infra Exceptions Occured")
-
+'''
 def check_kafka_status():
     for topic_name in topic_names:
         try:
-            consumer = KafkaConsumer(topic_name,bootstrap_servers=bootstrap_servers)
+            consumer = KafkaConsumer(
+                topic_name,
+                bootstrap_servers=bootstrap_servers,
+                enable_auto_commit=True,
+            )
         except NoBrokersAvailable:
             print(f"Kafka Topic {topic_name} is down")
             event_message = CreateMessage.ReportTemplate('Critical-Kafka', 'Down',
@@ -104,11 +111,11 @@ def sensor(name, interval, function):
 
 # Create a list of sensors with their names, intervals, and functions
 sensors = [
-    {"name": "Sensor1", "interval": 5, "function": check_docker_status},
-    {"name": "Sensor1", "interval": 3, "function": check_kafka_status},
+    # {"name": "Sensor1", "interval": 60, "function": check_docker_status},
+    # {"name": "Sensor1", "interval": 60, "function": check_kafka_status},
     # {"name": "Sensor2", "interval": 3, "function": chk_services},
     # {"name": "Sensor3", "interval": 10, "function": chk_db},
-    # {"name": "Sensor3", "interval": 5, "function": chk_424},
+    {"name": "Sensor3", "interval": 5, "function": chk_424},
 ]
 
 
