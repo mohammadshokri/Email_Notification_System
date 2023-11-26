@@ -3,50 +3,111 @@ from  Smtp_conf import SMTPClient, EmailSender
 import Connectors
 import threading
 import time
+from kafka_service import check_kafka_status
+from mongo_service import check_mongodb_status
 from recipient import load_data_from_csv
 from Message import CreateMessage
-import docker
-from kafka import KafkaConsumer
-from kafka.errors import NoBrokersAvailable
 roles, people = load_data_from_csv()
-
-
+import paramiko
 smtp_client = SMTPClient()
 email_sender = EmailSender(smtp_client)
-# email_sender.send_notification([moh.email], 'sample context', "Python SMTP")
-# email_sender.send_notification([person.email for person in role.members], 'sample context', "Python SMTP")
 container_names = ["etl-req-resp-docker", "etl-exception-docker", "etl-event-docker", "kafka-event-docker", "kafka-logstash-docker"]
-topic_names=['LogstashTopic','EventTopic']
-bootstrap_servers = ['192.168.102.72:9092']
-connection = Connectors.oracle_dw_connect()
+remote_servers = [
+    {'name':'Datawarehouse', 'ip': '10.40.195.156', 'username': 'root', 'threshold': 80, 'path' : '/u01'},
+    {'name':'DataLake', 'ip': '10.40.195.153', 'username': 'ubuntu','threshold': 60, 'path' : '/'},
+    {'name':'Pipeline', 'ip': '10.40.195.158', 'username': 'ubuntu', 'threshold': 60, 'path' : '/'},
 
+    # Add more remote servers as needed
+]
 
 def chk_424():
-
-    print("Function Event timeout is running.")
     result_dict = {}
     try:
         cursor = connection.cursor()
-        cursor.execute("SELECT session_clientid , count(*) FROM galaxy_ai.event_prim "\
-                       "where  t_date >  to_char(sysdate-10, 'yyyy/mm/dd hh24:mi:ss','nls_calendar=persian')"\
-                        # "and status='exception' and eventtype='span' and statuscode='424'"\
+        cursor.execute("SELECT session_clientid , count(*) FROM galaxy_ai.tb_error "\
+                       "where  t_date >  to_char(sysdate-1/24, 'yyyy/mm/dd hh24:mi:ss','nls_calendar=persian')"\
+                        "and statuscode='424'"\
                         "GROUP BY session_clientid" )
+
         rows = cursor.fetchall()
 
         for row in rows:
             a, b = row
             result_dict[a] = b
-        print(result_dict)
+        cnt = sum(result_dict.values())
+        print(f'chk_424,,, number of result {cnt}')
 
-        event_message = CreateMessage.EventTemplate(sum(result_dict.values()),'EXCEPTION','??',424,'Failed Dependency','قطعی سرویس بیرونی',1000021,'SERVICE_UNAVAILABLE',result_dict.__str__() )
-        email_sender.send_notification([person.email for person in roles['Admin'].members], event_message, "OBS Event: EXCEPTION 424")
+        if cnt > 2000:
+            event_message = CreateMessage.EventTemplate(cnt,'EXCEPTION','Provider',424,'Failed Dependency','قطعی سرویس بیرونی',1000021,'SERVICE_UNAVAILABLE',result_dict.__str__() )
+            email_sender.send_notification([person.email for person in roles['Support'].members], event_message, "OBS Event: EXCEPTION 424")
+
     except cx_Oracle.Error as error:
         print(f"Error: {error}")
     finally:
         cursor.close()
+def chk_424_CICS():
+    result_dict = {}
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT session_clientid , count(*) FROM galaxy_ai.tb_error "\
+                       "where  t_date >  to_char(sysdate-1/24, 'yyyy/mm/dd hh24:mi:ss','nls_calendar=persian')"\
+                        "and statuscode='424'"\
+                        "GROUP BY session_clientid" )
+
+        rows = cursor.fetchall()
+
+        for row in rows:
+            a, b = row
+            result_dict[a] = b
+        cnt = sum(result_dict.values())
+        print(f'chk_424,,, number of result {cnt}')
+
+        if cnt > 2000:
+            event_message = CreateMessage.EventTemplate(cnt,'EXCEPTION','Provider',424,'Failed Dependency','قطعی سرویس بیرونی',1000021,'SERVICE_UNAVAILABLE',result_dict.__str__() )
+            email_sender.send_notification([person.email for person in roles['Support'].members], event_message, "OBS Event: EXCEPTION 424")
+
+    except cx_Oracle.Error as error:
+        print(f"Error: {error}")
+    finally:
+        cursor.close()
+
+def check_disk_space():
+    for server in remote_servers:
+        host = server['ip']
+        username = server['username']
+        server_name = server['name']
+        private_key_path = '/home/ubuntu/.ssh/id_rsa'
+        threshold_percent = server['threshold']
+        path_to_check =  server['path']
+
+        key = paramiko.RSAKey(filename=private_key_path)
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        try:
+            client.connect(host, username=username, pkey=key)
+            command = f"df -h {path_to_check}"
+            stdin, stdout, stderr = client.exec_command(command)
+
+            # Parse the output to get disk space information
+            output = stdout.read().decode("utf-8").strip()
+            lines = output.split('\n')[1:]
+            for line in lines:
+                filesystem, size, used, available, percent, mountpoint = line.split()
+                if mountpoint == path_to_check:
+                    percent_used = int(percent.rstrip('%'))
+                    print(f"Disk space on {server_name}  {host}:{path_to_check} - Percentage Used: {percent_used}%")
+                    if percent_used > threshold_percent:
+                        event_message = CreateMessage.ReportTemplate('Infrastructure', f"Disk Space usage is Low! {percent_used}% Used on [{server_name}]",
+                                                         f"Path {path_to_check} - Total Space: {size} GB, Used Space: {used} GB, Free Space: {available} GB, \nPercentage Used: {percent_used}%")
+                        email_sender.send_notification([person.email for person in roles['Admin'].members], event_message, "OBS Event: Disk Capacity")
+        except Exception as e:
+            print(f"Error connecting to {host}: {e}")
+        finally:
+            # Close the SSH connection
+            client.close()
+
 def chk_timeout():
     connection = Connectors.oracle_connect()
-    print("Function Event timeout is running.")
     try:
         cursor = connection.cursor()
         cursor.execute("SELECT COUNT(*) FROM galaxy_ai.all_status")
@@ -84,24 +145,17 @@ def check_docker_status():
             email_sender.send_notification([person.email for person in roles['Manager'].members], event_message,
                                            "OBS Event: Infra Exceptions Occured")
 '''
-def check_kafka_status():
-    for topic_name in topic_names:
-        try:
-            consumer = KafkaConsumer(
-                topic_name,
-                bootstrap_servers=bootstrap_servers,
-                enable_auto_commit=True,
-            )
-        except NoBrokersAvailable:
-            print(f"Kafka Topic {topic_name} is down")
-            event_message = CreateMessage.ReportTemplate('Critical-Kafka', 'Down',
-                                                         f"Kafka '{topic_name}' is Down.")
-            email_sender.send_notification([person.email for person in roles['Manager'].members], event_message,
-                                           "OBS Event: Infra Broken")
-        except Exception as e:
-            print(f"Kafka error: {e}")
+
 def chk_db():
-    print("Function Db Check is running.")
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT dummy from dual" )
+    except Exception as e:
+        print(f"Error in connecting to database: {e}")
+        event_message = CreateMessage.ReportTemplate('Oracle Database','Database is no Responding!',' check database status')
+        email_sender.send_notification([person.email for person in roles['Admin'].members], event_message, 'OBS Event: Database Problem')
+    finally:
+        cursor.close()
 
 def sensor(name, interval, function):
     while True:
@@ -112,23 +166,32 @@ def sensor(name, interval, function):
 # Create a list of sensors with their names, intervals, and functions
 sensors = [
     # {"name": "Sensor1", "interval": 60, "function": check_docker_status},
-    # {"name": "Sensor1", "interval": 60, "function": check_kafka_status},
-    # {"name": "Sensor2", "interval": 3, "function": chk_services},
-    # {"name": "Sensor3", "interval": 10, "function": chk_db},
-    {"name": "Sensor3", "interval": 5, "function": chk_424},
+    {"name": "Sensor5", "interval": 15*60, "function": check_kafka_status},
+    # {"name": "Sensor4", "interval": 3, "function": chk_services},
+    {"name": "Sensor4", "interval": 10*60, "function": check_mongodb_status},
+    {"name": "Sensor3", "interval": 10*60, "function": chk_db},
+    {"name": "Sensor2", "interval": 15*60, "function": check_disk_space},
+    {"name": "Sensor1", "interval": 60*60, "function": chk_424},
 ]
 
+try:
+    connection = Connectors.oracle_connect()
 
-# Create and start threads for each sensor
-threads = []
-for sensor_info in sensors:
-    name = sensor_info["name"]
-    function = sensor_info["function"]
-    interval = sensor_info["interval"]
-    thread = threading.Thread(target=sensor, args=(name, interval, function))
-    threads.append(thread)
-    thread.start()
+    threads = []
+    for sensor_info in sensors:
+        name = sensor_info["name"]
+        function = sensor_info["function"]
+        interval = sensor_info["interval"]
+        thread = threading.Thread(target=sensor, args=(name, interval, function))
+        threads.append(thread)
+        thread.start()
 
-for thread in threads:
-    thread.join()
-connection.close()
+    for thread in threads:
+        thread.join()
+    connection.close()
+
+except Exception as e:
+    print(f"Error in connecting to database: {e}")
+    event_message = CreateMessage.ReportTemplate('Problem in Wathing Service', 'check the obs watching service!', ' Emergency status')
+    email_sender.send_notification([person.email for person in roles['Admin'].members], event_message,
+                                   'OBS Event: Unknown Problem, this is the last Email, Notification is OFF now!')
