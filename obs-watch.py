@@ -13,58 +13,43 @@ smtp_client = SMTPClient()
 email_sender = EmailSender(smtp_client)
 container_names = ["etl-req-resp-docker", "etl-exception-docker", "etl-event-docker", "kafka-event-docker", "kafka-logstash-docker"]
 remote_servers = [
-    {'name':'Datawarehouse', 'ip': '10.40.195.156', 'username': 'root', 'threshold': 80, 'path' : '/u01'},
+    {'name':'Datawarehouse', 'ip': '10.40.195.156', 'username': 'root', 'threshold': 90, 'path' : '/u01'},
     {'name':'DataLake', 'ip': '10.40.195.153', 'username': 'ubuntu','threshold': 60, 'path' : '/'},
     {'name':'Pipeline', 'ip': '10.40.195.158', 'username': 'ubuntu', 'threshold': 60, 'path' : '/'},
 
     # Add more remote servers as needed
 ]
-
+limit_424 = 1
 def chk_424():
     result_dict = {}
     try:
         cursor = connection.cursor()
-        cursor.execute("SELECT session_clientid , count(*) FROM galaxy_ai.tb_error "\
+        cursor.execute("SELECT session_clientid , count(*) cnt FROM galaxy_ai.tb_error "\
                        "where  t_date >  to_char(sysdate-1/24, 'yyyy/mm/dd hh24:mi:ss','nls_calendar=persian')"\
                         "and statuscode='424'"\
                         "GROUP BY session_clientid" )
 
         rows = cursor.fetchall()
-
         for row in rows:
-            a, b = row
-            result_dict[a] = b
+            session_clientid, cnt = row
+            result_dict[session_clientid] = cnt
+
         cnt = sum(result_dict.values())
-        print(f'chk_424,,, number of result {cnt}')
+        print(f'chk_424 is accored---> number of result {cnt}')
 
-        if cnt > 2000:
-            event_message = CreateMessage.EventTemplate(cnt,'EXCEPTION','Provider',424,'Failed Dependency','قطعی سرویس بیرونی',1000021,'SERVICE_UNAVAILABLE',result_dict.__str__() )
-            email_sender.send_notification([person.email for person in roles['Support'].members], event_message, "OBS Event: EXCEPTION 424")
 
-    except cx_Oracle.Error as error:
-        print(f"Error: {error}")
-    finally:
-        cursor.close()
-def chk_424_CICS():
-    result_dict = {}
-    try:
-        cursor = connection.cursor()
-        cursor.execute("SELECT session_clientid , count(*) FROM galaxy_ai.tb_error "\
-                       "where  t_date >  to_char(sysdate-1/24, 'yyyy/mm/dd hh24:mi:ss','nls_calendar=persian')"\
-                        "and statuscode='424'"\
-                        "GROUP BY session_clientid" )
-
-        rows = cursor.fetchall()
-
-        for row in rows:
-            a, b = row
-            result_dict[a] = b
-        cnt = sum(result_dict.values())
-        print(f'chk_424,,, number of result {cnt}')
-
-        if cnt > 2000:
-            event_message = CreateMessage.EventTemplate(cnt,'EXCEPTION','Provider',424,'Failed Dependency','قطعی سرویس بیرونی',1000021,'SERVICE_UNAVAILABLE',result_dict.__str__() )
-            email_sender.send_notification([person.email for person in roles['Support'].members], event_message, "OBS Event: EXCEPTION 424")
+        if cnt > limit_424:
+            event_message = CreateMessage.EventTemplate(
+                totalCount=cnt,
+                status='EXCEPTION',
+                category='Provider',
+                statusCode='424',
+                statusName='Failed Dependency',
+                statusDesc= 'قطعی سرویس بیرونی'.encode(),
+                resultCode='1000021',
+                exceptionKey='SERVICE_UNAVAILABLE',
+                detail=result_dict)
+            email_sender.send_notification([person.email for person in roles['ME'].members], event_message, "DOP event detection: EXCEPTION 424")
 
     except cx_Oracle.Error as error:
         print(f"Error: {error}")
@@ -171,7 +156,7 @@ sensors = [
     {"name": "Sensor4", "interval": 10*60, "function": check_mongodb_status},
     {"name": "Sensor3", "interval": 10*60, "function": chk_db},
     {"name": "Sensor2", "interval": 15*60, "function": check_disk_space},
-    {"name": "Sensor1", "interval": 60*60, "function": chk_424},
+    {"name": "Sensor1", "interval": 1*60, "function": chk_424},
 ]
 
 try:

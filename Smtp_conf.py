@@ -19,15 +19,19 @@ class EmailSender(SenderType):
             self.smtp_client.send_email(reci, message, subject)
 
 class SMTPClient:
-    def __init__(self, smtp_server="webmail.tiddev.com", smtp_port=25, smtp_user="oo", smtp_password="DRg^sT%B^c&59_r&"):
+    def __init__(self, smtp_server="webmail.tiddev.com", smtp_port=25, smtp_user="obs.noti@tiddev.com", smtp_password="DRg^sT%B^c&59_r&"):
         self.smtp_server = smtp_server
         self.smtp_port = smtp_port
         self.smtp_user = smtp_user
         self.smtp_password = smtp_password
 
     def send_email(self, to_email, message, subject):
-        rep_time = f'\nREPORTED TIME = {jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S").__str__()}'
-        msg = MIMEText(message + rep_time )
+        rep_time = f'<br><hr>REPORTED TIME = {jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S").__str__()}'
+        msg = MIMEText(message + rep_time , _subtype='html', _charset='utf-8' )
+        msg.add_header('Content-Type', 'text/html')
+        msg['Content-Type'] = 'text/html; charset=utf-8'
+        # msg['Content-Transfer-Encoding'] = '8bit'
+
         msg['Subject'] = subject
         msg['From'] = self.smtp_user
         msg['To'] = to_email
