@@ -60,44 +60,25 @@ def report_mng_daily():
             exceptData = exceptData,
             clientExceptData=clientExceptData
             )
-        print(event_message)
+
         email_sender.send_notification([person.email for person in roles['TOPMANAGEMENT'].members], event_message,
                                            "DOP, Management Reports")
-
-    except cx_Oracle.Error as error:
-        print(f"Error: {error}")
+        print('Email Sent!')
+    except Exception as e:
+        print(f"Error accord : {e}")
     finally:
         cursor.close()
 
 def report_10():
     print("Function report_10 is executed!")
 
-
-time_function_mapping = {
-    "11:07": report_mng_daily,
-    "17:11": report_10,
-
-}
-#
-now = datetime.now()
-initial_delays = {time: (datetime(now.year, now.month, now.day, *map(int, time.split(':'))) - now).total_seconds() for time in time_function_mapping}
-
-for time, func in time_function_mapping.items():
-    schedule.every().day.at(time).do(func)
-
-min_initial_delay = min(initial_delays.values())
-
-
-if min_initial_delay < 0:
-    min_initial_delay += 24 * 60 * 60  # 24 hours in seconds
-
-mytime.sleep(min_initial_delay)
 connection = Connectors.oracle_connect()
 
+schedule.every().day.at("20:00").do(report_mng_daily)
+# schedule.every().day.at("10:30").do(job)
+# schedule.every().monday.do(job)
+# schedule.every().wednesday.at("13:15").do(job)
 while True:
     schedule.run_pending()
-    mytime.sleep(1)
-
-# report_mng_daily()
-
+    mytime.sleep(10)
 
