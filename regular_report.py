@@ -15,7 +15,7 @@ def report_mng_daily():
     print("Report_mng_daily run!")
     try:
         cursor = connection.cursor()
-        cursor.execute("SELECT t_date,total_event,success_event,unsuccess_event,success_event_perc,unsuccess_event_perc FROM galaxy_ai.VW_NOTIF_STATUS_MNG ")
+        cursor.execute("SELECT /*+ parallel(a 40)*/ t_date,total_event,success_event,unsuccess_event,success_event_perc,unsuccess_event_perc FROM galaxy_ai.VW_NOTIF_STATUS_MNG a")
         row = cursor.fetchone()  # Use fetchone to get a single row
 
         if row:
@@ -23,14 +23,14 @@ def report_mng_daily():
             fromDate = jdatetime.datetime.now().strftime("%Y-%m-%d").__str__()+' 00:00 AM'
             toDate = jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S").__str__()
 
-        cursor.execute("select  SERVICe_NAME, CNT from galaxy_ai.VW_TOP5_SRVICENAME_EXCEP")
+        cursor.execute("select  /*+ parallel(a 40)*/ SERVICe_NAME, CNT from galaxy_ai.VW_TOP5_SRVICENAME_EXCEP a")
         rows = cursor.fetchall()  # Use fetchone to get a single row
         serviceData = {}
         for row in rows:
             service_name, cnt = row
             serviceData[service_name] = cnt
 
-        cursor.execute("select   STATUSCODE,STATUS_DESCRIPTION, CNT, PERCENTAGE from galaxy_ai.VW_NOTIF_EXCEP_STATUSCODE_MNG")
+        cursor.execute("select /*+ parallel(a 40)*/  STATUSCODE,STATUS_DESCRIPTION, CNT, PERCENTAGE from galaxy_ai.VW_NOTIF_EXCEP_STATUSCODE_MNG a")
         rows = cursor.fetchall()  # Use fetchone to get a single row
         exceptData = {}
         for row in rows:
@@ -61,9 +61,9 @@ def report_mng_daily():
             clientExceptData=clientExceptData
             )
 
-        email_sender.send_notification([person.email for person in roles['TOPMANAGEMENT'].members], event_message,
+        email_sender.send_notification('TOPMANAGEMENT', event_message,
                                            "DOP, Management Reports")
-        print('Email Sent!')
+
     except Exception as e:
         print(f"Error accord : {e}")
     finally:

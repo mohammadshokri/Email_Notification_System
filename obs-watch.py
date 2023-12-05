@@ -6,9 +6,7 @@ import time
 from kafka_service import check_kafka_status
 from os_services import check_disk_space
 from mongo_service import check_mongodb_status
-from recipient import load_data_from_csv
 from Message import CreateMessage
-roles, people = load_data_from_csv()
 
 smtp_client = SMTPClient()
 email_sender = EmailSender(smtp_client)
@@ -43,7 +41,7 @@ def chk_424():
                 resultCode='1000021',
                 exceptionKey='SERVICE_UNAVAILABLE',
                 detail=result_dict)
-            email_sender.send_notification([person.email for person in roles['Support'].members], event_message, "DOP event detection: EXCEPTION 424")
+            email_sender.send_notification('Support', event_message, "DOP event detection: EXCEPTION 424")
 
     except cx_Oracle.Error as error:
         print(f"Error in chk_424 : {error}")
@@ -71,7 +69,7 @@ def chk_db():
     except Exception as e:
         print(f"Error in connecting to database: {e}")
         event_message = CreateMessage.ReportTemplate('Oracle Database','Database is no Responding!',' check database status')
-        email_sender.send_notification([person.email for person in roles['Admin'].members], event_message, 'OBS Event: Database Problem')
+        email_sender.send_notification('Admin', event_message, 'OBS Event: Database Problem')
     finally:
         cursor.close()
 
@@ -83,9 +81,7 @@ def sensor(name, interval, function):
 
 # Create a list of sensors with their names, intervals, and functions
 sensors = [
-    # {"name": "Sensor1", "interval": 60, "function": check_docker_status},
     {"name": "Sensor5", "interval": 15*60, "function": check_kafka_status},
-    # {"name": "Sensor4", "interval": 3, "function": chk_services},
     {"name": "Sensor4", "interval": 10*60, "function": check_mongodb_status},
     {"name": "Sensor3", "interval": 10*60, "function": chk_db},
     {"name": "Sensor2", "interval": 15*60, "function": check_disk_space},
@@ -111,5 +107,5 @@ try:
 except Exception as e:
     print(f"Error in connecting to database: {e}")
     event_message = CreateMessage.ReportTemplate('Problem in Wathing Service', 'check the obs watching service!', '  this is the last Email, Notification is OFF now!<br><strong>CRITICAL STATUS call Admins Mr. Shokri and Mr. Abdolahi</strong>')
-    email_sender.send_notification([person.email for person in roles['Admin'].members], event_message,
+    email_sender.send_notification('Admin', event_message,
                                    'DOP Event: Critical Status! Unknown Problem...')

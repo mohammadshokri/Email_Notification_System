@@ -26,14 +26,13 @@ def check_kafka_status():
                     expected_status['status'] = True
                     event_message = CreateMessage.ReportTemplate('Resolved-Kafka', 'Up',
                                                                  f"Kafka {topic_name} is Up now.")
-                    email_sender.send_notification([person.email for person in roles['Admin'].members],
-                                                   event_message, f"DOP Event: Infra Broken - {topic_name}")
+                    email_sender.send_notification('Admin', event_message, f"DOP Event: Infra Broken - {topic_name}")
             else:
                 print(f"Kafka Topic {topic_name} is down")
                 expected_status['status'] = False
                 event_message = CreateMessage.ReportTemplate('Critical-Kafka', 'Down',
                                                              f"Kafka {topic_name} is Down.")
-                email_sender.send_notification([person.email for person in roles['Admin'].members], event_message,
+                email_sender.send_notification('Admin', event_message,
                                                f"DOP Event: Infra Broken - {topic_name}")
 
     except Exception as e:
@@ -42,7 +41,7 @@ def check_kafka_status():
             expected_status['status'] = False
             event_message = CreateMessage.ReportTemplate('Critical-Kafka', 'Unknown Status',
                                                          f"Kafka {topic_name} is in an unknown state.")
-            email_sender.send_notification([person.email for person in roles['Admin'].members], event_message,
+            email_sender.send_notification('Admin', event_message,
                                            f"DOP Event: Infra Broken - {topic_name}")
 
 # Usage example
