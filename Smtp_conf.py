@@ -22,9 +22,10 @@ class EmailSender(SenderType):
 
 
 class SMTPClient:
-    def __init__(self, smtp_server="webmail.tiddev.com", smtp_port=25, smtp_user="obs.noti@tiddev.com", smtp_password="DRg^sT%B^c&59_r&"):
+    def __init__(self, smtp_server="mail.tejaratbank.ir", smtp_port=587,sender_user="dop.notification@tejaratbank.ir", smtp_user="dop.notification", smtp_password="ms9Mmk8#@12s"):
         self.smtp_server = smtp_server
         self.smtp_port = smtp_port
+        self.sender_user = sender_user
         self.smtp_user = smtp_user
         self.smtp_password = smtp_password
 
@@ -36,7 +37,7 @@ class SMTPClient:
         recipient = [person.email for person in roles[to_email].members]
         recipient_str = ', '.join(recipient)
         msg['Subject'] = subject
-        msg['From'] = self.smtp_user
+        msg['From'] = self.sender_user
         msg['To'] = recipient_str
         bcc_emails=''
         if to_email== 'Support':
@@ -58,7 +59,8 @@ class SMTPClient:
         except Exception as e:
             print(f"Error sending email: {str(e)}")
 #
-# smtp_client = SMTPClient("webmail.tiddev.com", 25, "obs.noti@tiddev.com", "DRg^sT%B^c&59_r&")
+# smtp_client = SMTPClient("webmail.tiddev.com", 25, "obs.noti@tiddev.com","obs.noti@tiddev.com", "DRg^sT%B^c&59_r&")
+# smtp_client = SMTPClient(smtp_server="mail.tejaratbank.ir", smtp_port=587,sender_user="dop.notification@tejaratbank.ir", smtp_user="dop.notification",smtp_password="ms9Mmk8#@12s")
 # email_sender = EmailSender(smtp_client)
 # email_sender.send_notification(["shokri.m@tiddev.com"],'message', "Python SMTP")
 # email_sender.send_notification([" faghihabdollahi.r@tiddev.com"],'message', "Python SMTP")

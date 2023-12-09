@@ -16,17 +16,17 @@ def chk_424():
     result_dict = {}
     try:
         cursor = connection.cursor()
-        cursor.execute("SELECT session_clientid , count(*) cnt FROM galaxy_ai.tb_error "\
-                       "where  t_date >  to_char(sysdate-1/24, 'yyyy/mm/dd hh24:mi:ss','nls_calendar=persian')"\
-                       "and statuscode='424'"\
-                       "GROUP BY session_clientid order by cnt desc")
+        cursor.execute("SELECT session_clientid , descr, cnt FROM galaxy_ai.vw_notif_424_error ")
 
         rows = cursor.fetchall()
         for row in rows:
-            session_clientid, cnt = row
-            result_dict[session_clientid] = cnt
+            session_clientid, descr, cnt = row
+            result_dict[session_clientid] = {
+                "CNT": cnt,
+                "DESCR": descr
+            }
 
-        cnt = sum(result_dict.values())
+        cnt = sum(item["CNT"] for item in result_dict.values())
         print(f'chk_424 is accored---> number of result {cnt}')
 
 
@@ -42,6 +42,7 @@ def chk_424():
                 exceptionKey='SERVICE_UNAVAILABLE',
                 detail=result_dict)
             email_sender.send_notification('Support', event_message, "DOP event detection: EXCEPTION 424")
+            # email_sender.send_notification('ME', event_message, "DOP event detection: EXCEPTION 424")
 
     except cx_Oracle.Error as error:
         print(f"Error in chk_424 : {error}")

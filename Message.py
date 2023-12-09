@@ -16,9 +16,9 @@ class CreateMessage:
         if detail:
             message += "<br><br><strong>Client Failure Counts:</strong><br>"
             message += "<table border='1'>"
-            message += "<tr><th>Client Name</th><th>Count</th></tr>"
-            for name, cnt in detail.items():
-                message += f"<tr><td>{name}</td><td>{cnt}</td></tr>"
+            message += "<tr><th>Client Name</th><th>توضیحات</th><th>Count</th></tr>"
+            for name, info in detail.items():
+                message += f"<tr><td>{name}</td><td>{info.get('DESCR', '')}</td><td>{info.get('CNT', 0)}</td></tr>"
             message += "</table>"
         message += "</body></html>"
         return message
@@ -52,9 +52,10 @@ class CreateMessage:
         if serviceData:
             message += "<br><br><strong>Top 5 Services with Most Failures:</strong><br>"
             message += "<table border='1'>"
-            message += "<tr><th>Service Name</th><th>Count</th></tr>"
-            for service_name, count in serviceData.items():
-                message += f"<tr><td>{service_name}</td><td>{count}</td></tr>"
+            message += "<tr><th>Service Name</th><th>توضیحات</th><th>Count</th></tr>"
+            for service_name, service_info in serviceData.items():
+                truncated_service_name = service_name[:30] + "..." + service_name[-5:] if len(service_name) > 30 else service_name
+                message += f"<tr><td>{truncated_service_name}</td><td>{service_info.get('DESCR', '')}</td><td>{service_info.get('CNT', 0)}</td></tr>"
             message += "</table>"
         if exceptData:
             message += "<br><br><strong>Number of Errors Today, Categorized by Error Code:</strong><br>"
@@ -66,9 +67,9 @@ class CreateMessage:
         if clientExceptData:
             message += "<br><br><strong>Top 5 Clients with Most Errors:</strong><br>"
             message += "<table border='1'>"
-            message += "<tr><th>Client Name</th><th>Count</th></tr>"
-            for client_name, client_count in clientExceptData.items():
-                message += f"<tr><td>{client_name}</td><td>{client_count}</td></tr>"
+            message += "<tr><th>Client Name</th><th>توضیحات</th><th>Count</th></tr>"
+            for client_name, client_info in clientExceptData.items():
+                message += f"<tr><td>{client_name}</td><td>{client_info.get('DESCR', '')}</td><td>{client_info.get('CNT', 0)}</td></tr>"
             message += "</table>"
 
         return message
