@@ -33,7 +33,7 @@ def report_mng_daily():
                  "DESCR" : service_descr}
 
         cursor.execute("select /*+ parallel(a 40)*/  STATUSCODE,STATUS_DESCRIPTION, CNT, PERCENTAGE from galaxy_ai.VW_NOTIF_EXCEP_STATUSCODE_MNG a")
-        rows = cursor.fetchall()  # Use fetchone to get a single row
+        rows = cursor.fetchall()
         exceptData = {}
         for row in rows:
             ex_statuscode, ex_status_description, ex_cnt, ex_percentage = row
@@ -42,7 +42,7 @@ def report_mng_daily():
                 "CNT": ex_cnt,
                 "PERCENTAGE": ex_percentage
             }
-        cursor.execute("select /*+ parallel(a 40)*/  CONSUMER, CNT, DESCR from galaxy_ai.VW_TOP5_CLIENT_EXCEP")
+        cursor.execute("select /*+ parallel(a 40)*/  CONSUMER, CNT, DESCR from galaxy_ai.VW_TOP5_CLIENT_EXCEP a")
         rows = cursor.fetchall()  # Use fetchone to get a single row
         clientExceptData = {}
         for row in rows:
@@ -64,8 +64,8 @@ def report_mng_daily():
             clientExceptData=clientExceptData
             )
 
-        email_sender.send_notification('TOPMANAGEMENT', event_message, "DOP, Management Reports")
-        # email_sender.send_notification('ME', event_message, "DOP, Management Reports")
+        email_sender.send_notification('TOPMANAGEMENT', event_message, "DOP, Management Reports", chart_data=clientExceptData)
+        # email_sender.send_notification('ME', event_message, "DOP, Management Reports", chart_data=clientExceptData)
 
     except Exception as e:
         print(f"Error accord : {e}")
@@ -83,6 +83,7 @@ schedule.every().day.at("22:00").do(report_mng_daily)
 # schedule.every().day.at("10:30").do(job)
 # schedule.every().monday.do(job)
 # schedule.every().wednesday.at("13:15").do(job)
+
 while True:
     schedule.run_pending()
     mytime.sleep(10)

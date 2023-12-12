@@ -1,11 +1,17 @@
 import smtplib
 import time
 from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
 from abc import ABC, abstractmethod
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import jdatetime
+import matplotlib.pyplot as plt
+from io import BytesIO
 from recipient import load_data_from_csv
+from bidi.algorithm import get_display
+from arabic_reshaper import reshape
+
 
 roles, people = load_data_from_csv()
 class SenderType(ABC):
@@ -17,9 +23,8 @@ class EmailSender(SenderType):
     def __init__(self, smtp_client):
         self.smtp_client = smtp_client
 
-    def send_notification(self, recipient, message, subject):
-        self.smtp_client.send_email(recipient, message, subject)
-
+    def send_notification(self, recipient, message, subject,chart_data=None):
+        self.smtp_client.send_email(recipient, message, subject,chart_data)
 
 class SMTPClient:
     def __init__(self, smtp_server="mail.tejaratbank.ir", smtp_port=587,sender_user="dop.notification@tejaratbank.ir", smtp_user="dop.notification", smtp_password="ms9Mmk8#@12s"):
@@ -29,9 +34,34 @@ class SMTPClient:
         self.smtp_user = smtp_user
         self.smtp_password = smtp_password
 
-    def send_email(self, to_email, message, subject):
+    def generate_pie_chart(self, clientExceptData):
+        labels = [client_info['DESCR'] for client_info in clientExceptData.values()]
+        # labels = [client_info.get('CONSUMER', '') for client_info in clientExceptData.values()]
+        persian_labels = [get_display(reshape(label)) for label in labels]
+        counts = [float(client_info['CNT'].replace(',', '')) for client_info in clientExceptData.values()]
+
+        plt.pie(counts, labels=persian_labels, autopct='%1.1f%%', startangle=140)
+        plt.axis('equal')
+        plt.title("Top 5 Clients with Most Errors", fontdict={'fontsize': 16}, y=1.05)
+        plt.tight_layout(pad=2.0)
+        chart_buffer = BytesIO()
+        plt.savefig(chart_buffer, format='png')
+        plt.close()
+
+        chart_image = MIMEImage(chart_buffer.getvalue(), name='chart.png')
+        chart_image.add_header('Content-Disposition', 'attachment', filename='chart.png')
+
+        return chart_image
+    def send_email(self, to_email, message, subject,chart_data):
         rep_time = f'<br><hr>Reported time {jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S").__str__()}'
-        msg = MIMEText(message + rep_time , _subtype='html', _charset='utf-8' )
+        msg = MIMEMultipart()
+        body = MIMEText(message + '<br>'+ rep_time, _subtype='html', _charset='utf-8')
+        msg.attach(body)
+
+        if chart_data:
+            chart_image = self.generate_pie_chart(chart_data)
+            msg.attach(chart_image)
+
         msg.add_header('Content-Type', 'text/html')
         msg['Content-Type'] = 'text/html; charset=utf-8'
         recipient = [person.email for person in roles[to_email].members]
@@ -59,7 +89,7 @@ class SMTPClient:
         except Exception as e:
             print(f"Error sending email: {str(e)}")
 #
-# smtp_client = SMTPClient("webmail.tiddev.com", 25, "obs.noti@tiddev.com","obs.noti@tiddev.com", "DRg^sT%B^c&59_r&")
+smtp_client = SMTPClient("webmail.tiddev.com", 25, "obs.noti@tiddev.com","obs.noti@tiddev.com", "DRg^sT%B^c&59_r&")
 # smtp_client = SMTPClient(smtp_server="mail.tejaratbank.ir", smtp_port=587,sender_user="dop.notification@tejaratbank.ir", smtp_user="dop.notification",smtp_password="ms9Mmk8#@12s")
 # email_sender = EmailSender(smtp_client)
 # email_sender.send_notification(["shokri.m@tiddev.com"],'message', "Python SMTP")

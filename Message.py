@@ -37,16 +37,12 @@ class CreateMessage:
         message = f"<strong>Galaxy Report from {fromDate} to {toDate}</strong><br>"
         message += f"<table border='1'>"
         message += "<tr><th>Category</th><th>Number</th><th>Percent</th></tr>"
-
         # Add Total Events
         message += f"<tr><td>Total Events</td><td>{total}<td></td></td></tr>"
-
         # Add Success Events
         message += f"<tr><td>Success Events</td><td>{succ}</td><td>{succPerc}</td></td></tr>"
-
         # Add Unsuccess Events
         message += f"<tr><td>Unsuccess Events</td><td>{unSucc}</td><td>{unSuccPerc}</td></td></tr>"
-
         message += "</table>"
 
         if serviceData:
