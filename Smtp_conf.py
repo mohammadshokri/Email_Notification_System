@@ -82,14 +82,13 @@ class SMTPClient:
             server.ehlo()
             server.starttls()
             server.login(user=self.smtp_user, password=self.smtp_password)
-            server.sendmail(msg['From'], [msg['To']] + msg['Bcc'].split(","), msg.as_string())
-
+            server.sendmail(msg['From'], msg['To'].split(",") + msg['Bcc'].split(","), msg.as_string())
             server.quit()
             print(f"Email sent to {recipient_str}: {subject}")
         except Exception as e:
             print(f"Error sending email: {str(e)}")
 #
-smtp_client = SMTPClient("webmail.tiddev.com", 25, "obs.noti@tiddev.com","obs.noti@tiddev.com", "DRg^sT%B^c&59_r&")
+smtp_client = SMTPClient("webmail.tiddev.com", 25, "obs.noti@tiddev.com","obs.noti@tiddev.com", "R7tZEh3!+#EG%IIM")
 # smtp_client = SMTPClient(smtp_server="mail.tejaratbank.ir", smtp_port=587,sender_user="dop.notification@tejaratbank.ir", smtp_user="dop.notification",smtp_password="ms9Mmk8#@12s")
 # email_sender = EmailSender(smtp_client)
 # email_sender.send_notification(["shokri.m@tiddev.com"],'message', "Python SMTP")
