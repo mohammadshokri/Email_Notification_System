@@ -90,8 +90,8 @@ class SMTPClient:
             print(f"Error sending email: {str(e)}")
 #
 
-smtp_client = SMTPClient(smtp_server="webmail.tiddev.com", smtp_port=25,sender_user="obs.noti@tiddev.com", smtp_user="obs.noti@tiddev.com",smtp_password="R7tZEh3!+#EG%IIM")
+# smtp_client = SMTPClient(smtp_server="webmail.tiddev.com", smtp_port=25,sender_user="obs.noti@tiddev.com", smtp_user="obs.noti@tiddev.com",smtp_password="R7tZEh3!+#EG%IIM")
 # smtp_client = SMTPClient(smtp_server="mail.tejaratbank.ir", smtp_port=587,sender_user="dop.notification@tejaratbank.ir", smtp_user="dop.notification",smtp_password="ms9Mmk8#@12s")
-email_sender = EmailSender(smtp_client)
-email_sender.send_notification("Admin",'message', "Python SMTP")
+# email_sender = EmailSender(smtp_client)
+# email_sender.send_notification("Admin",'message', "Python SMTP")
 # email_sender.send_notification([" faghihabdollahi.r@tiddev.com"],'message', "Python SMTP")

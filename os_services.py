@@ -1,9 +1,8 @@
 from  Smtp_conf import SMTPClient, EmailSender
+import logging
 from Message import CreateMessage
-from recipient import load_data_from_csv
+logging.basicConfig(filename='os_event.log', level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
 import paramiko
-
-roles, people = load_data_from_csv()
 
 smtp_client = SMTPClient()
 email_sender = EmailSender(smtp_client)
@@ -45,9 +44,11 @@ def check_disk_space():
                     if percent_used > threshold_percent:
                         event_message = CreateMessage.ReportTemplate('Infrastructure', f"Disk Space usage is Low! {percent_used}% Used on [{server_name}]",
                                                          f"Path {path_to_check} - Total Space: {size} GB, Used Space: {used} GB, Free Space: {available} GB, \nPercentage Used: {percent_used}%")
-                        email_sender.send_notification([person.email for person in roles['Admin'].members], event_message, "DOP Event: Disk Capacity")
+                        email_sender.send_notification('Admin', event_message, "DOP Event: Disk Capacity")
+
         except Exception as e:
             print(f"Error connecting to {host}: {e}")
+            logging.error(f"Error on Disk Capacity check on {server_name}: {str(e)}")
         finally:
             # Close the SSH connection
             client.close()
@@ -103,7 +104,7 @@ def check_swap_size():
             if used_swap > threshold_swap:
                 event_message = CreateMessage.ReportTemplate('Infrastructure', f"Swap Space usage is high on [{server_name}]",
                                                               f"Total Swap: {total_swap} G, Used Swap: {used_swap} G, Free Swap: {free_swap} G")
-                email_sender.send_notification([person.email for person in roles['Admin'].members], event_message, "Dop Event: Swap Space")
+                email_sender.send_notification('Admin', event_message, "Dop Event: Swap Space")
 
         except Exception as e:
             print(f"Error connecting to {host}: {e}")

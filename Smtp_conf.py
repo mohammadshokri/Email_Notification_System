@@ -11,8 +11,9 @@ from io import BytesIO
 from recipient import load_data_from_csv
 from bidi.algorithm import get_display
 from arabic_reshaper import reshape
+import logging
 
-
+logging.basicConfig(filename='Smtp_conf_log.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 roles, people = load_data_from_csv()
 class SenderType(ABC):
     @abstractmethod
@@ -83,13 +84,17 @@ class SMTPClient:
             server.starttls()
             server.login(user=self.smtp_user, password=self.smtp_password)
             server.sendmail(msg['From'], msg['To'].split(",") + msg['Bcc'].split(","), msg.as_string())
+
             server.quit()
             print(f"Email sent to {recipient_str}: {subject}")
+            logging.info(f"Email {subject} sent to {recipient_str} ")
         except Exception as e:
             print(f"Error sending email: {str(e)}")
+            logging.error(f"Error sending {subject} email to {recipient_str} : {str(e)}")
 #
-smtp_client = SMTPClient("webmail.tiddev.com", 25, "obs.noti@tiddev.com","obs.noti@tiddev.com", "R7tZEh3!+#EG%IIM")
-# smtp_client = SMTPClient(smtp_server="mail.tejaratbank.ir", smtp_port=587,sender_user="dop.notification@tejaratbank.ir", smtp_user="dop.notification",smtp_password="ms9Mmk8#@12s")
+
+# smtp_client = SMTPClient(smtp_server="webmail.tiddev.com", smtp_port=25,sender_user="obs.noti@tiddev.com", smtp_user="obs.noti@tiddev.com",smtp_password="R7tZEh3!+#EG%IIM")
+#smtp_client = SMTPClient(smtp_server="mail.tejaratbank.ir", smtp_port=587,sender_user="dop.notification@tejaratbank.ir", smtp_user="dop.notification",smtp_password="ms9Mmk8#@12s")
 # email_sender = EmailSender(smtp_client)
-# email_sender.send_notification(["shokri.m@tiddev.com"],'message', "Python SMTP")
+# email_sender.send_notification("Admin",'message', "Python SMTP")
 # email_sender.send_notification([" faghihabdollahi.r@tiddev.com"],'message', "Python SMTP")
