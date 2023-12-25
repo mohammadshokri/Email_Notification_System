@@ -11,9 +11,17 @@ smtp_client = SMTPClient()
 email_sender = EmailSender(smtp_client)
 
 from kafka import KafkaAdminClient
+import subprocess
 
 topics_status = {'EventTopic': {'status': True}, 'LogstashTopic': {'status': True}}
 
+def start_kafka_service():
+    try:
+        kafka_service_name = 'kafka'
+        subprocess.run(['sudo', 'systemctl', 'start', kafka_service_name], check=True)
+        print(f"Kafka service ({kafka_service_name}) started successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error starting Kafka service: {e}")
 def check_kafka_status():
     try:
         admin_client = KafkaAdminClient(bootstrap_servers=bootstrap_servers)
@@ -34,6 +42,7 @@ def check_kafka_status():
                                                              f"Kafka {topic_name} is Down.")
                 email_sender.send_notification('Admin', event_message,
                                                f"DOP Event: Infra Broken - {topic_name}")
+                start_kafka_service()
 
     except Exception as e:
         print(f"Kafka error: {e}")
@@ -43,6 +52,7 @@ def check_kafka_status():
                                                          f"Kafka {topic_name} is in an unknown state.")
             email_sender.send_notification('Admin', event_message,
                                            f"DOP Event: Infra Broken - {topic_name}")
+            start_kafka_service()
 
 # Usage example
 check_kafka_status()

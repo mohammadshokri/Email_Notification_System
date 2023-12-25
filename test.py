@@ -23,8 +23,8 @@ class EmailSender(SenderType):
     def __init__(self, smtp_client):
         self.smtp_client = smtp_client
 
-    def send_notification(self, recipient, message, subject,chart_data=None):
-        self.smtp_client.send_email(recipient, message, subject,chart_data)
+    def send_notification(self, recipient, message, subject,chart_data=None,clientDetail=None):
+        self.smtp_client.send_email(recipient, message, subject,chart_data,clientDetail)
 
 class SMTPClient:
     def __init__(self, smtp_server="mail.tejaratbank.ir", smtp_port=587,sender_user="dop.notification@tejaratbank.ir", smtp_user="dop.notification", smtp_password="ms9Mmk8#@12s"):
@@ -52,7 +52,7 @@ class SMTPClient:
         chart_image.add_header('Content-Disposition', 'attachment', filename='chart.png')
 
         return chart_image
-    def send_email(self, to_email, message, subject,chart_data):
+    def send_email(self, to_email, message, subject,chart_data,clientDetail):
         rep_time = f'<br><hr>Reported time {jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S").__str__()}'
         msg = MIMEMultipart()
         body = MIMEText(message + '<br>'+ rep_time, _subtype='html', _charset='utf-8')
