@@ -54,9 +54,9 @@ class SMTPClient:
 
         return chart_image
     def send_email(self, to_email, message, subject,chart_data):
-        rep_time = f'<br><hr>Reported time {jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S").__str__()}'
+
         msg = MIMEMultipart()
-        body = MIMEText(message + '<br>'+ rep_time, _subtype='html', _charset='utf-8')
+        body = MIMEText(message , _subtype='html', _charset='utf-8')
         msg.attach(body)
 
         if chart_data:

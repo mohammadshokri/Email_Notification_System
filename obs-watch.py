@@ -11,7 +11,8 @@ from Message import CreateMessage
 smtp_client = SMTPClient()
 email_sender = EmailSender(smtp_client)
 
-limit_424 = 2000
+limit_424 = 20
+
 def chk_424():
     result_dict = {}
     try:
@@ -90,8 +91,8 @@ sensors = [
 ]
 
 try:
-    connection = Connectors.oracle_connect()
 
+    connection = Connectors.oracle_connect()
     threads = []
     for sensor_info in sensors:
         name = sensor_info["name"]

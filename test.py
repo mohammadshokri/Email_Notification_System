@@ -13,6 +13,8 @@ from bidi.algorithm import get_display
 from arabic_reshaper import reshape
 
 
+from Message import CreateMessage
+
 roles, people = load_data_from_csv()
 class SenderType(ABC):
     @abstractmethod
@@ -53,9 +55,9 @@ class SMTPClient:
 
         return chart_image
     def send_email(self, to_email, message, subject,chart_data,clientDetail):
-        rep_time = f'<br><hr>Reported time {jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S").__str__()}'
+        # rep_time = f'<br><hr>Reported time {jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S").__str__()}'
         msg = MIMEMultipart()
-        body = MIMEText(message + '<br>'+ rep_time, _subtype='html', _charset='utf-8')
+        body = MIMEText(message , _subtype='html', _charset='utf-8')
         msg.attach(body)
 
         if chart_data:
@@ -90,8 +92,10 @@ class SMTPClient:
             print(f"Error sending email: {str(e)}")
 #
 
-# smtp_client = SMTPClient(smtp_server="webmail.tiddev.com", smtp_port=25,sender_user="obs.noti@tiddev.com", smtp_user="obs.noti@tiddev.com",smtp_password="R7tZEh3!+#EG%IIM")
+smtp_client = SMTPClient(smtp_server="webmail.tiddev.com", smtp_port=25,sender_user="obs.noti@tiddev.com", smtp_user="obs.noti@tiddev.com",smtp_password="R7tZEh3!+#EG%IIM")
 # smtp_client = SMTPClient(smtp_server="mail.tejaratbank.ir", smtp_port=587,sender_user="dop.notification@tejaratbank.ir", smtp_user="dop.notification",smtp_password="ms9Mmk8#@12s")
-# email_sender = EmailSender(smtp_client)
-# email_sender.send_notification("Admin",'message', "Python SMTP")
+email_sender = EmailSender(smtp_client)
+message = CreateMessage.AbnormalityTemplate('sstatus','ccat',f'Abnormal Feature: session_businessDomain\\n Abnormal Type: data Abnormal Sample: None (42704864-b7cb-4eb8-8f86-5d88666b6081) \n '
+                                                             f'Normal Sample: dwh-statement (a25fcb18-ef46-4223-994e-fc6e18ed15c1) ')
+email_sender.send_notification("Admin",message, "Python SMTP")
 # email_sender.send_notification([" faghihabdollahi.r@tiddev.com"],'message', "Python SMTP")
