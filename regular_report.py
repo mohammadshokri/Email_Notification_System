@@ -15,7 +15,7 @@ def report_mng_daily():
     print("Report_mng_daily run!")
     try:
         cursor = connection.cursor()
-        cursor.execute("SELECT /*+ parallel(a 10)*/ t_date,total_event,success_event,unsuccess_event,success_event_perc,unsuccess_event_perc FROM galaxy_ai.VW_NOTIF_STATUS_MNG a")
+        cursor.execute("SELECT t_date,total_event,success_event,unsuccess_event,success_event_perc,unsuccess_event_perc FROM galaxy_ai.VW_NOTIF_STATUS_MNG a")
         row = cursor.fetchone()  # Use fetchone to get a single row
 
         if row:

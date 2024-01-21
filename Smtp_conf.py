@@ -28,7 +28,7 @@ class EmailSender(SenderType):
         self.smtp_client.send_email(recipient, message, subject,chart_data)
 
 class SMTPClient:
-    def __init__(self, smtp_server="mail.tejaratbank.ir", smtp_port=587,sender_user="dop.notification@tejaratbank.ir", smtp_user="dop.notification", smtp_password="ms9Mmk8#@12s"):
+    def __init__(self, smtp_server="mail.tejaratbank.ir", smtp_port=587,sender_user="dop.notification@tejaratbank.ir", smtp_user="dop.notification", smtp_password="ms87moh@#s"):
         self.smtp_server = smtp_server
         self.smtp_port = smtp_port
         self.sender_user = sender_user
@@ -94,7 +94,7 @@ class SMTPClient:
 #
 
 # smtp_client = SMTPClient(smtp_server="webmail.tiddev.com", smtp_port=25,sender_user="obs.noti@tiddev.com", smtp_user="obs.noti@tiddev.com",smtp_password="R7tZEh3!+#EG%IIM")
-#smtp_client = SMTPClient(smtp_server="mail.tejaratbank.ir", smtp_port=587,sender_user="dop.notification@tejaratbank.ir", smtp_user="dop.notification",smtp_password="ms9Mmk8#@12s")
+#smtp_client = SMTPClient(smtp_server="mail.tejaratbank.ir", smtp_port=587,sender_user="dop.notification@tejaratbank.ir", smtp_user="dop.notification",smtp_password="ms87moh@#s")
 # email_sender = EmailSender(smtp_client)
 # email_sender.send_notification("Admin",'message', "Python SMTP")
 # email_sender.send_notification([" faghihabdollahi.r@tiddev.com"],'message', "Python SMTP")
