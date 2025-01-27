@@ -63,7 +63,7 @@ class SMTPClient:
             chart_image = self.generate_pie_chart(chart_data)
             msg.attach(chart_image)
 
-        msg.add_header('Content-Type', 'text/html')
+        msg.add_header('Content-Type',  'text/html')
         msg['Content-Type'] = 'text/html; charset=utf-8'
         recipient = [person.email for person in roles[to_email].members]
         recipient_str = ', '.join(recipient)
